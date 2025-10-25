@@ -12,7 +12,36 @@ A comprehensive competitor analysis tool that automatically tracks news, product
 - **Flexible Reporting**: Daily briefings, weekly reports, and competitor profiles
 - **Multiple Export Formats**: Export to CSV, JSON, HTML, and text
 - **Database Storage**: SQLite database for historical tracking
-- **CLI Interface**: Easy-to-use command-line interface
+- **Web UI**: User-friendly web interface for easy management
+- **CLI Interface**: Powerful command-line interface for automation
+
+## Two Ways to Use
+
+### Option 1: Web UI (Recommended for Beginners)
+
+Launch the web interface for an easy-to-use graphical interface:
+
+```bash
+streamlit run app.py
+```
+
+Then open your browser to `http://localhost:8501`
+
+**Web UI Features:**
+- Dashboard with real-time statistics
+- Easy form to add competitors with name and URL
+- Visual competitor management
+- One-click update fetching
+- Interactive reports with charts
+- Export functionality
+
+### Option 2: Command-Line Interface (CLI)
+
+For automation and advanced users, use the powerful CLI:
+
+```bash
+python -m competitor_tracker [command] [options]
+```
 
 ## Quick Start
 
@@ -78,7 +107,72 @@ python -m competitor_tracker report weekly --format html --output report.html
 python -m competitor_tracker report profile --competitor-id 1
 ```
 
-## Usage Examples
+## Using the Web UI
+
+The web interface provides an intuitive way to manage your competitor tracking:
+
+### Starting the Web UI
+
+```bash
+# Install dependencies first
+pip install -r requirements.txt
+
+# Launch the web interface
+streamlit run app.py
+```
+
+Open your browser to `http://localhost:8501`
+
+### Web UI Pages
+
+**Dashboard**
+- View real-time statistics
+- See recent news, product changes, and company updates
+- Monitor activity across all competitors
+
+**Add Competitor**
+- Simple form to add new competitors
+- Required: Company Name
+- Optional: Website, Industry, Description, Keywords, Location, etc.
+- One-click submission
+
+**Manage Competitors**
+- View all tracked competitors
+- Search and filter by name or industry
+- View detailed information for each competitor
+- Delete competitors with confirmation
+
+**Fetch Updates**
+- Select specific competitor or fetch for all
+- Choose how many days back to search
+- Set maximum results per competitor
+- Progress bar shows real-time status
+- Automatic categorization and sentiment analysis
+
+**Reports**
+- Generate daily reports for any date
+- Create weekly summaries
+- Build detailed competitor profiles
+- Choose text or HTML format
+- Download reports directly from browser
+
+**Settings**
+- Configure AI providers (OpenAI, Anthropic, or local models)
+- Add NewsAPI key for better news coverage
+- Export all data to CSV or JSON
+- Manage system configuration
+
+### Web UI Screenshots
+
+The interface includes:
+- Clean, modern design
+- Responsive layout
+- Real-time updates
+- Progress indicators
+- Download buttons for all reports
+- Color-coded sentiment indicators
+
+## CLI Usage Examples
 
 ### Adding Competitors
 

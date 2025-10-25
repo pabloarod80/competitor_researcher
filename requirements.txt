@@ -2,6 +2,10 @@
 requests>=2.31.0
 PyYAML>=6.0
 
+# Web UI
+streamlit>=1.28.0
+pandas>=2.0.0
+
 # Optional: AI providers (uncomment the ones you need)
 # openai>=1.0.0        # For OpenAI GPT models
 # anthropic>=0.18.0    # For Anthropic Claude models
