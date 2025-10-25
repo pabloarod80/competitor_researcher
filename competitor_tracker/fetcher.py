@@ -146,7 +146,8 @@ class NewsFetcher:
     def fetch_competitor_news(self, competitor_name: str,
                              keywords: List[str] = None,
                              days_back: int = 7,
-                             max_results: int = 10) -> List[Dict]:
+                             max_results: int = 10,
+                             include_social: bool = False) -> List[Dict]:
         """
         Fetch news about a specific competitor.
 
@@ -155,8 +156,35 @@ class NewsFetcher:
             keywords: Additional keywords to search for
             days_back: Number of days to look back
             max_results: Maximum number of results to return
+            include_social: Include social media (requires Perplexity)
         """
-        # Build search query
+        # Priority: Perplexity > NewsAPI > Google News RSS
+
+        # Check if we have Perplexity API key (best option - includes social media)
+        if self.config.get('perplexity_api_key'):
+            try:
+                from .perplexity_fetcher import PerplexityFetcher
+
+                perplexity = PerplexityFetcher(
+                    api_key=self.config['perplexity_api_key'],
+                    model=self.config.get('perplexity_model', 'llama-3.1-sonar-large-128k-online')
+                )
+
+                results = perplexity.search_competitor_news(
+                    competitor_name,
+                    keywords=keywords,
+                    days_back=days_back,
+                    include_social=include_social
+                )
+
+                if results:
+                    return results[:max_results]
+
+            except Exception as e:
+                print(f"Perplexity fetch error: {e}")
+                print("Falling back to NewsAPI or Google News...")
+
+        # Build search query for fallback sources
         query_parts = [competitor_name]
 
         if keywords:
@@ -186,6 +214,29 @@ class NewsFetcher:
 
         Searches for terms like "launch", "release", "update", "feature", etc.
         """
+        # Use Perplexity if available (better for product updates)
+        if self.config.get('perplexity_api_key'):
+            try:
+                from .perplexity_fetcher import PerplexityFetcher
+
+                perplexity = PerplexityFetcher(
+                    api_key=self.config['perplexity_api_key'],
+                    model=self.config.get('perplexity_model', 'llama-3.1-sonar-large-128k-online')
+                )
+
+                results = perplexity.search_product_updates(
+                    competitor_name,
+                    product_keywords=product_keywords
+                )
+
+                if results:
+                    return results
+
+            except Exception as e:
+                print(f"Perplexity product search error: {e}")
+                print("Falling back to traditional sources...")
+
+        # Fallback to traditional sources
         product_terms = [
             'product launch', 'new feature', 'release', 'update',
             'announces', 'unveils', 'introduces'
@@ -222,6 +273,29 @@ class NewsFetcher:
 
         Searches for corporate news and announcements.
         """
+        # Use Perplexity if available (better for company updates)
+        if self.config.get('perplexity_api_key'):
+            try:
+                from .perplexity_fetcher import PerplexityFetcher
+
+                perplexity = PerplexityFetcher(
+                    api_key=self.config['perplexity_api_key'],
+                    model=self.config.get('perplexity_model', 'llama-3.1-sonar-large-128k-online')
+                )
+
+                results = perplexity.search_company_changes(
+                    competitor_name,
+                    days_back=30
+                )
+
+                if results:
+                    return results
+
+            except Exception as e:
+                print(f"Perplexity company search error: {e}")
+                print("Falling back to traditional sources...")
+
+        # Fallback to traditional sources
         company_terms = [
             'funding', 'acquisition', 'merger', 'partnership',
             'CEO', 'executive', 'hiring', 'expansion', 'revenue'

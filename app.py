@@ -318,6 +318,17 @@ def fetch_updates_page():
 
     max_results = st.slider("Max results per competitor", min_value=5, max_value=50, value=10)
 
+    # Social media option (only available with Perplexity)
+    include_social = False
+    if st.session_state.config.get('perplexity_api_key'):
+        include_social = st.checkbox(
+            "🐦 Include Social Media (Twitter, Reddit, etc.)",
+            value=False,
+            help="Powered by Perplexity - searches social media for mentions and discussions"
+        )
+    else:
+        st.info("💡 Add Perplexity API key in Settings to enable social media search")
+
     if st.button("🔄 Fetch Updates", type="primary"):
         progress_bar = st.progress(0)
         status_text = st.empty()
@@ -341,7 +352,8 @@ def fetch_updates_page():
                     comp['name'],
                     keywords=keywords,
                     days_back=days_back,
-                    max_results=max_results
+                    max_results=max_results,
+                    include_social=include_social
                 )
 
                 # Process and store
@@ -777,10 +789,35 @@ def settings_page():
 
                 st.success("✅ AI settings saved!")
 
+    # Perplexity API Settings (RECOMMENDED)
+    with st.expander("🔍 Perplexity API Settings (Recommended)", expanded=False):
+        st.markdown("**Best option for comprehensive news and social media search!**")
+        st.write("Get your API key at [perplexity.ai/settings/api](https://www.perplexity.ai/settings/api)")
+
+        st.info("Perplexity searches across news, Twitter, Reddit, blogs, and more with AI-powered understanding.")
+
+        perplexity_key = st.text_input("Perplexity API Key", type="password", key="pplx_key")
+        perplexity_model = st.selectbox(
+            "Perplexity Model",
+            options=[
+                "llama-3.1-sonar-small-128k-online",
+                "llama-3.1-sonar-large-128k-online",
+                "llama-3.1-sonar-huge-128k-online"
+            ],
+            index=1,
+            help="Large model recommended for comprehensive results"
+        )
+
+        if st.button("💾 Save Perplexity Settings", key="save_pplx"):
+            st.session_state.config['perplexity_api_key'] = perplexity_key
+            st.session_state.config['perplexity_model'] = perplexity_model
+            st.session_state.fetcher = NewsFetcher(st.session_state.config)
+            st.success("✅ Perplexity settings saved! You now have access to news + social media search.")
+
     # News API Settings
-    with st.expander("📰 News API Settings"):
+    with st.expander("📰 NewsAPI Settings (Alternative)"):
         st.write("Get a free API key from [newsapi.org](https://newsapi.org)")
-        newsapi_key = st.text_input("NewsAPI Key", type="password")
+        newsapi_key = st.text_input("NewsAPI Key", type="password", key="newsapi_key")
 
         if st.button("💾 Save NewsAPI Key"):
             st.session_state.config['newsapi_key'] = newsapi_key

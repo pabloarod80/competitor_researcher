@@ -12,7 +12,11 @@ A comprehensive competitor analysis tool that automatically tracks news, product
   - Department-specific action items with priorities
   - Market implications and trend analysis
 - **Executive Briefings**: AI-generated executive summaries consolidating all competitive intelligence
-- **Multiple Data Sources**: Fetches news from Google News, NewsAPI, and more
+- **Multiple Data Sources**:
+  - **Perplexity API** (recommended): News + Social Media (Twitter, Reddit, blogs)
+  - NewsAPI: Traditional news aggregation
+  - Google News RSS: Free fallback option
+- **Social Media Monitoring**: Track competitor mentions on Twitter, Reddit, Hacker News, and LinkedIn (with Perplexity)
 - **Smart Categorization**: Automatically categorizes updates (product, funding, partnerships, etc.)
 - **Sentiment Analysis**: Tracks sentiment of competitor news
 - **Flexible Reporting**: Daily briefings, weekly reports, and competitor profiles
@@ -152,8 +156,10 @@ Open your browser to `http://localhost:8501`
 - Select specific competitor or fetch for all
 - Choose how many days back to search
 - Set maximum results per competitor
+- **Optional: Include Social Media** (Twitter, Reddit, etc. with Perplexity)
 - Progress bar shows real-time status
 - Automatic categorization and sentiment analysis
+- Intelligent source fallback (Perplexity → NewsAPI → Google News)
 
 **Business Insights** 💡 (NEW!)
 - **AI-Powered Impact Analysis**: Analyze threat level and business impact of each competitor
@@ -294,17 +300,48 @@ ollama_url: http://localhost:11434
 
 ### News Sources
 
-#### Google News RSS (Free, no API key required)
+The system supports multiple news sources with automatic fallback:
 
-Default fallback source. Works without any configuration.
+#### Perplexity API (⭐ Recommended)
 
-#### NewsAPI (Recommended)
+**Best option for comprehensive intelligence gathering!**
 
-For better news coverage, get a free API key from [newsapi.org](https://newsapi.org):
+Perplexity provides AI-powered search across:
+- News articles from thousands of sources
+- Social media (Twitter, Reddit, LinkedIn, Hacker News)
+- Blog posts and industry publications
+- Company announcements and press releases
+- Real-time web search
+
+Get your API key at [perplexity.ai/settings/api](https://www.perplexity.ai/settings/api)
+
+```yaml
+perplexity_api_key: pplx-your-api-key-here
+perplexity_model: llama-3.1-sonar-large-128k-online
+```
+
+**Why Perplexity?**
+- Searches across news AND social media
+- AI-powered understanding of queries
+- Real-time and recent information
+- Better at finding product launches and company changes
+- Includes source citations
+
+**Cost:** ~$0.005 per search (200 searches for $1)
+
+#### NewsAPI (Alternative)
+
+Traditional news aggregator with good coverage:
+
+Get a free API key from [newsapi.org](https://newsapi.org):
 
 ```yaml
 newsapi_key: your-newsapi-key-here
 ```
+
+#### Google News RSS (Free Fallback)
+
+Default fallback source. Works without any configuration. Limited to news articles only.
 
 ## Database Schema
 
