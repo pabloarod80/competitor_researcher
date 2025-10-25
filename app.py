@@ -19,6 +19,7 @@ from competitor_tracker.database import CompetitorDB
 from competitor_tracker.fetcher import NewsFetcher, DataEnricher
 from competitor_tracker.analyzer import AIAnalyzer
 from competitor_tracker.reporter import Reporter
+from competitor_tracker.business_analyzer import BusinessImpactAnalyzer
 
 
 # Page configuration
@@ -89,6 +90,9 @@ if 'analyzer' not in st.session_state:
 
 if 'reporter' not in st.session_state:
     st.session_state.reporter = Reporter(st.session_state.db, st.session_state.analyzer)
+
+if 'business_analyzer' not in st.session_state:
+    st.session_state.business_analyzer = BusinessImpactAnalyzer(st.session_state.analyzer)
 
 
 def home_page():
@@ -479,6 +483,253 @@ def reports_page():
             st.info("No competitors added yet.")
 
 
+def business_insights_page():
+    """Business insights and AI-powered competitive intelligence page."""
+    st.markdown('<p class="main-header">💡 Business Insights & Impact Analysis</p>', unsafe_allow_html=True)
+
+    competitors = st.session_state.db.get_competitors()
+
+    if not competitors:
+        st.warning("⚠️ No competitors added yet. Add competitors first!")
+        return
+
+    # Check if AI is enabled
+    ai_enabled = st.session_state.config.get('enable_ai', False) and st.session_state.analyzer is not None
+
+    if not ai_enabled:
+        st.info("💡 **AI Analysis is currently disabled.** Enable AI in Settings for enhanced insights, or view rule-based analysis below.")
+
+    st.markdown("---")
+
+    # Analysis options
+    col1, col2 = st.columns([2, 1])
+
+    with col1:
+        analysis_type = st.radio(
+            "Analysis Type",
+            ["Individual Competitor Analysis", "Executive Briefing (All Competitors)"],
+            horizontal=True
+        )
+
+    with col2:
+        days_range = st.slider("Days of data", 7, 90, 30)
+
+    st.markdown("---")
+
+    if analysis_type == "Individual Competitor Analysis":
+        # Individual competitor analysis
+        selected_comp = st.selectbox(
+            "Select Competitor to Analyze",
+            options=[c['name'] for c in competitors]
+        )
+
+        company_context = st.text_area(
+            "Your Business Context (Optional)",
+            placeholder="e.g., We are a B2B SaaS company focused on enterprise customers...",
+            help="Provide context about your business to get more relevant insights"
+        )
+
+        if st.button("🔍 Analyze Business Impact", type="primary"):
+            comp = next(c for c in competitors if c['name'] == selected_comp)
+
+            with st.spinner(f"Analyzing business impact of {selected_comp}..."):
+                # Get recent updates
+                updates = st.session_state.db.get_recent_updates(
+                    days=days_range,
+                    competitor_id=comp['id']
+                )
+
+                # Combine all updates
+                all_updates = (
+                    updates.get('news', []) +
+                    updates.get('product_changes', []) +
+                    updates.get('company_updates', [])
+                )
+
+                # Perform analysis
+                analysis = st.session_state.business_analyzer.analyze_business_impact(
+                    competitor_name=selected_comp,
+                    updates=all_updates,
+                    your_company_context=company_context if company_context else None
+                )
+
+                # Display results
+                st.markdown("## Analysis Results")
+
+                # Threat Level Alert
+                threat_level = analysis.get('threat_level', 'low')
+                if threat_level == 'critical':
+                    st.error(f"🔴 **CRITICAL THREAT LEVEL** - Immediate attention required")
+                elif threat_level == 'high':
+                    st.warning(f"🟠 **HIGH THREAT LEVEL** - Priority monitoring needed")
+                elif threat_level == 'medium':
+                    st.info(f"🟡 **MEDIUM THREAT LEVEL** - Regular monitoring recommended")
+                else:
+                    st.success(f"🟢 **LOW THREAT LEVEL** - No immediate concerns")
+
+                # Key metrics
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Threat Level", threat_level.upper())
+                with col2:
+                    opp_level = analysis.get('opportunity_level', 'low')
+                    st.metric("Opportunity Level", opp_level.upper())
+                with col3:
+                    impact = analysis.get('overall_impact', 'minimal')
+                    st.metric("Overall Impact", impact.upper())
+
+                # Executive Summary
+                if analysis.get('executive_summary'):
+                    st.markdown("### Executive Summary")
+                    st.info(analysis['executive_summary'])
+
+                # Key Findings
+                if analysis.get('key_findings'):
+                    st.markdown("### 📋 Key Findings")
+                    for finding in analysis['key_findings']:
+                        st.markdown(f"• {finding}")
+
+                # Threats and Opportunities
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    if analysis.get('threats'):
+                        st.markdown("### ⚠️ Threats")
+                        for threat in analysis['threats']:
+                            st.markdown(f"• {threat}")
+
+                with col2:
+                    if analysis.get('opportunities'):
+                        st.markdown("### 🎯 Opportunities")
+                        for opp in analysis['opportunities']:
+                            st.markdown(f"• {opp}")
+
+                # Strategic Recommendations
+                if analysis.get('strategic_recommendations'):
+                    st.markdown("### 💡 Strategic Recommendations")
+                    for i, rec in enumerate(analysis['strategic_recommendations'], 1):
+                        st.markdown(f"{i}. {rec}")
+
+                # Action Items
+                if analysis.get('action_items'):
+                    st.markdown("### ✅ Action Items")
+
+                    # Create a table for action items
+                    action_data = []
+                    for item in analysis['action_items']:
+                        priority_emoji = "🔴" if item.get('priority') == 'high' else "🟡" if item.get('priority') == 'medium' else "🟢"
+                        action_data.append({
+                            'Priority': f"{priority_emoji} {item.get('priority', 'N/A').upper()}",
+                            'Action': item.get('action', 'N/A'),
+                            'Department': item.get('department', 'N/A'),
+                            'Timeframe': item.get('timeframe', 'N/A')
+                        })
+
+                    if action_data:
+                        df = pd.DataFrame(action_data)
+                        st.dataframe(df, use_container_width=True, hide_index=True)
+
+                # Market Implications
+                if analysis.get('market_implications'):
+                    st.markdown("### 🌐 Market Implications")
+                    for impl in analysis['market_implications']:
+                        st.markdown(f"• {impl}")
+
+                # Download analysis
+                st.markdown("---")
+                import json
+                analysis_json = json.dumps(analysis, indent=2)
+                st.download_button(
+                    label="📥 Download Analysis (JSON)",
+                    data=analysis_json,
+                    file_name=f"business_analysis_{selected_comp.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.json",
+                    mime="application/json"
+                )
+
+    else:
+        # Executive briefing for all competitors
+        if st.button("📊 Generate Executive Briefing", type="primary"):
+            with st.spinner("Analyzing all competitors..."):
+                all_analyses = []
+
+                for comp in competitors:
+                    # Get recent updates
+                    updates = st.session_state.db.get_recent_updates(
+                        days=days_range,
+                        competitor_id=comp['id']
+                    )
+
+                    # Combine all updates
+                    all_updates = (
+                        updates.get('news', []) +
+                        updates.get('product_changes', []) +
+                        updates.get('company_updates', [])
+                    )
+
+                    # Perform analysis
+                    analysis = st.session_state.business_analyzer.analyze_business_impact(
+                        competitor_name=comp['name'],
+                        updates=all_updates
+                    )
+                    all_analyses.append(analysis)
+
+                # Generate briefing
+                briefing = st.session_state.business_analyzer.generate_executive_briefing(all_analyses)
+
+                st.markdown("## Executive Briefing")
+                st.text(briefing)
+
+                # Priority Action Items Dashboard
+                st.markdown("---")
+                st.markdown("## 🎯 Consolidated Action Items")
+
+                action_items = st.session_state.business_analyzer.get_action_items_by_priority(all_analyses)
+
+                col1, col2, col3 = st.columns(3)
+
+                with col1:
+                    st.markdown("### 🔴 High Priority")
+                    if action_items['high']:
+                        for item in action_items['high']:
+                            st.markdown(f"**{item.get('competitor')}**")
+                            st.markdown(f"{item.get('action')}")
+                            st.caption(f"{item.get('department')} • {item.get('timeframe')}")
+                            st.markdown("---")
+                    else:
+                        st.info("No high priority actions")
+
+                with col2:
+                    st.markdown("### 🟡 Medium Priority")
+                    if action_items['medium']:
+                        for item in action_items['medium'][:5]:
+                            st.markdown(f"**{item.get('competitor')}**")
+                            st.markdown(f"{item.get('action')}")
+                            st.caption(f"{item.get('department')} • {item.get('timeframe')}")
+                            st.markdown("---")
+                    else:
+                        st.info("No medium priority actions")
+
+                with col3:
+                    st.markdown("### 🟢 Low Priority")
+                    if action_items['low']:
+                        for item in action_items['low'][:5]:
+                            st.markdown(f"**{item.get('competitor')}**")
+                            st.markdown(f"{item.get('action')}")
+                            st.caption(f"{item.get('department')} • {item.get('timeframe')}")
+                            st.markdown("---")
+                    else:
+                        st.info("No low priority actions")
+
+                # Download briefing
+                st.markdown("---")
+                st.download_button(
+                    label="📥 Download Executive Briefing",
+                    data=briefing,
+                    file_name=f"executive_briefing_{datetime.now().strftime('%Y%m%d')}.txt",
+                    mime="text/plain"
+                )
+
+
 def settings_page():
     """Settings and configuration page."""
     st.markdown('<p class="main-header">⚙️ Settings</p>', unsafe_allow_html=True)
@@ -522,6 +773,7 @@ def settings_page():
                 # Reinitialize analyzer
                 st.session_state.analyzer = AIAnalyzer(st.session_state.config)
                 st.session_state.reporter = Reporter(st.session_state.db, st.session_state.analyzer)
+                st.session_state.business_analyzer = BusinessImpactAnalyzer(st.session_state.analyzer)
 
                 st.success("✅ AI settings saved!")
 
@@ -576,7 +828,7 @@ def main():
     page = st.sidebar.radio(
         "Go to",
         ["🏠 Dashboard", "➕ Add Competitor", "🏢 Manage Competitors",
-         "🔄 Fetch Updates", "📊 Reports", "⚙️ Settings"]
+         "🔄 Fetch Updates", "💡 Business Insights", "📊 Reports", "⚙️ Settings"]
     )
 
     st.sidebar.markdown("---")
@@ -600,6 +852,8 @@ def main():
         view_competitors_page()
     elif page == "🔄 Fetch Updates":
         fetch_updates_page()
+    elif page == "💡 Business Insights":
+        business_insights_page()
     elif page == "📊 Reports":
         reports_page()
     elif page == "⚙️ Settings":

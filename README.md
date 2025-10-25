@@ -5,14 +5,20 @@ A comprehensive competitor analysis tool that automatically tracks news, product
 ## Features
 
 - **Automated Tracking**: Daily and weekly tracking of competitor activities
-- **AI-Powered Analysis**: Intelligent summarization and competitive impact analysis
+- **AI-Powered Business Impact Analysis**:
+  - Threat level assessment (Low/Medium/High/Critical)
+  - Opportunity identification from competitor weaknesses
+  - Strategic recommendations with actionable insights
+  - Department-specific action items with priorities
+  - Market implications and trend analysis
+- **Executive Briefings**: AI-generated executive summaries consolidating all competitive intelligence
 - **Multiple Data Sources**: Fetches news from Google News, NewsAPI, and more
 - **Smart Categorization**: Automatically categorizes updates (product, funding, partnerships, etc.)
 - **Sentiment Analysis**: Tracks sentiment of competitor news
 - **Flexible Reporting**: Daily briefings, weekly reports, and competitor profiles
 - **Multiple Export Formats**: Export to CSV, JSON, HTML, and text
 - **Database Storage**: SQLite database for historical tracking
-- **Web UI**: User-friendly web interface for easy management
+- **Web UI**: User-friendly web interface with Business Insights dashboard
 - **CLI Interface**: Powerful command-line interface for automation
 
 ## Two Ways to Use
@@ -148,6 +154,16 @@ Open your browser to `http://localhost:8501`
 - Set maximum results per competitor
 - Progress bar shows real-time status
 - Automatic categorization and sentiment analysis
+
+**Business Insights** 💡 (NEW!)
+- **AI-Powered Impact Analysis**: Analyze threat level and business impact of each competitor
+- **Threat Assessment**: Get low/medium/high/critical threat ratings
+- **Opportunity Identification**: Find market opportunities from competitor weaknesses
+- **Strategic Recommendations**: Receive AI-generated strategic advice
+- **Action Items Dashboard**: Prioritized action items by department and timeframe
+- **Executive Briefings**: Consolidated analysis across all competitors
+- **Your Business Context**: Optionally provide your business context for tailored insights
+- Works with or without AI (rule-based fallback available)
 
 **Reports**
 - Generate daily reports for any date
@@ -317,6 +333,116 @@ The tool uses SQLite with the following tables:
 3. **Analyze**: AI summarization and sentiment analysis
 4. **Store**: Save to SQLite database
 5. **Report**: Generate daily/weekly reports
+
+## Business Impact Analysis
+
+The system provides AI-powered competitive intelligence to help you understand how competitor actions affect your business and what you should do about it.
+
+### How It Works
+
+1. **Data Collection**: System fetches and categorizes competitor news, product changes, and company updates
+2. **AI Analysis**: Analyzes updates for business impact using AI (or rule-based fallback)
+3. **Threat Assessment**: Assigns threat levels (Low/Medium/High/Critical)
+4. **Opportunity Identification**: Finds market opportunities from competitor weaknesses
+5. **Strategic Recommendations**: Generates specific, actionable recommendations
+6. **Action Items**: Creates prioritized action items with departments and timeframes
+
+### What You Get
+
+**For Each Competitor:**
+- **Threat Level**: Low, Medium, High, or Critical
+- **Opportunity Level**: Assessment of exploitable weaknesses
+- **Executive Summary**: 2-3 sentence overview of the situation
+- **Key Findings**: 3-5 specific insights about competitor activity
+- **Threats**: Specific risks to your business and why they matter
+- **Opportunities**: Ways to capitalize on competitor weaknesses
+- **Strategic Recommendations**: What your company should do strategically
+- **Action Items**: Specific tasks with:
+  - Priority (High/Medium/Low)
+  - Action description
+  - Responsible department
+  - Timeframe
+
+**Executive Briefing (All Competitors):**
+- High-priority threats summary
+- Medium-priority monitoring items
+- Market opportunities across all competitors
+- Consolidated action items by priority
+- Overall strategic recommendations
+
+### Example Analysis Output
+
+```
+🔴 HIGH THREAT LEVEL - Priority monitoring needed
+
+Threat Level: HIGH
+Opportunity Level: MEDIUM
+Overall Impact: SIGNIFICANT
+
+Executive Summary:
+Competitor X announced $50M Series B funding and launched 3 new enterprise features.
+High threat due to increased resources and product acceleration. However, negative
+customer sentiment presents an opportunity.
+
+Key Findings:
+• Secured $50M Series B from top-tier investors
+• Launched AI-powered analytics feature directly competing with our core offering
+• Customer reviews show frustration with implementation complexity
+
+Threats:
+• New funding enables aggressive sales and marketing expansion
+• AI analytics feature matches 80% of our functionality at lower price point
+
+Opportunities:
+• Poor implementation experience creating customer churn
+• No white-glove onboarding service (our differentiator)
+
+Strategic Recommendations:
+1. Accelerate AI feature development to maintain technical lead
+2. Double down on customer success and implementation support
+3. Launch competitive positioning campaign highlighting ease of implementation
+
+Action Items:
+Priority  | Action                                    | Department  | Timeframe
+----------|-------------------------------------------|-------------|------------
+HIGH      | Review and enhance AI feature roadmap     | Product     | This week
+HIGH      | Competitive battle card for sales team    | Marketing   | This week
+MEDIUM    | Customer success expansion plan           | Operations  | This month
+```
+
+### Using Business Insights in the Web UI
+
+1. Navigate to **💡 Business Insights**
+2. Choose analysis type:
+   - **Individual Competitor**: Deep dive on one competitor
+   - **Executive Briefing**: Overview of all competitors
+3. Optionally add your business context for tailored insights
+4. Click "Analyze Business Impact"
+5. Review results: threats, opportunities, recommendations, action items
+6. Download analysis as JSON for sharing
+
+### Enabling AI for Enhanced Analysis
+
+The Business Impact Analysis works in two modes:
+
+**With AI (Recommended):**
+- More sophisticated analysis
+- Context-aware recommendations
+- Natural language insights
+- Customized to your business context
+
+**Without AI (Rule-Based):**
+- Still functional and useful
+- Keyword-based threat detection
+- Pattern-based opportunity identification
+- Generic but actionable recommendations
+
+To enable AI:
+1. Go to **⚙️ Settings**
+2. Enable AI Analysis
+3. Choose provider (OpenAI, Anthropic, or local)
+4. Add API key
+5. Save settings
 
 ## Advanced Features
 
