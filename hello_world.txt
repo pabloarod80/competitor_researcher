@@ -1,2 +1,0 @@
-Testing git and github is fun and complex!
-Testing commit with vscode

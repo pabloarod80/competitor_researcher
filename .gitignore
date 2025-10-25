@@ -1,0 +1,43 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Configuration with sensitive data
+config.yaml
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reports and exports
+*.csv
+*.html
+reports/
+exports/
+
+# Logs
+*.log
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
