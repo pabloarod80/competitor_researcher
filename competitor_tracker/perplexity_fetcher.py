@@ -258,12 +258,17 @@ Be comprehensive and factual."""
 
 Search {sources}.{keyword_text}
 
-Provide:
-- News headlines and summaries
-- Sources and publication dates
-- URLs when available
-- Key details and significance
+For each news item you find, provide the response in this EXACT format:
 
+TITLE: [headline or title of the news]
+SOURCE: [source name]
+DATE: [publication date]
+URL: [article URL if available]
+SUMMARY: [brief summary of the article]
+
+---
+
+Find 5-10 recent news items and format each one using the structure above. Separate each item with --- .
 Organize by date (most recent first)."""
 
         return query
@@ -338,47 +343,105 @@ Organize by date (most recent first)."""
         """
         results = []
 
-        # Split response into individual items
-        # Perplexity typically formats responses with clear sections
-        lines = response.split('\n')
+        # Split response by separator ---
+        items = response.split('---')
 
-        current_item = {}
-
-        for line in lines:
-            line = line.strip()
-
-            if not line:
-                if current_item:
-                    results.append(current_item)
-                    current_item = {}
+        for item_text in items:
+            item_text = item_text.strip()
+            if not item_text:
                 continue
 
-            # Try to extract structured information
-            if line.startswith('- ') or line.startswith('* ') or line.startswith('• '):
-                # This is likely a news item
-                title = line[2:].strip()
-                current_item = {
-                    'title': title,
-                    'competitor_name': competitor_name,
-                    'source': 'Perplexity Search',
-                    'content': '',
-                    'url': None,
-                    'published_at': None,
-                    'fetched_at': datetime.now().isoformat()
-                }
-            elif line.startswith('http'):
-                # This is likely a URL
-                if current_item:
-                    current_item['url'] = line
-            elif current_item and not current_item.get('content'):
-                # This is likely content/description
-                current_item['content'] = line
+            # Initialize item with defaults
+            item = {
+                'title': '',
+                'competitor_name': competitor_name,
+                'source': 'Perplexity Search',
+                'content': '',
+                'url': None,
+                'published_at': None,
+                'fetched_at': datetime.now().isoformat()
+            }
 
-        # Add last item if exists
-        if current_item:
-            results.append(current_item)
+            # Parse each line looking for structured fields
+            lines = item_text.split('\n')
+            for line in lines:
+                line = line.strip()
 
-        # If parsing didn't work well, create a single comprehensive item
+                if line.startswith('TITLE:'):
+                    item['title'] = line.replace('TITLE:', '').strip()
+                elif line.startswith('SOURCE:'):
+                    item['source'] = line.replace('SOURCE:', '').strip()
+                elif line.startswith('DATE:'):
+                    item['published_at'] = line.replace('DATE:', '').strip()
+                elif line.startswith('URL:'):
+                    url = line.replace('URL:', '').strip()
+                    if url and url.lower() != 'n/a' and url.lower() != 'not available':
+                        item['url'] = url
+                elif line.startswith('SUMMARY:'):
+                    item['content'] = line.replace('SUMMARY:', '').strip()
+                elif line and not any(line.startswith(prefix) for prefix in ['TITLE:', 'SOURCE:', 'DATE:', 'URL:', 'SUMMARY:']):
+                    # Continuation of previous field (likely summary)
+                    if item.get('content'):
+                        item['content'] += ' ' + line
+                    elif not item.get('title'):
+                        # If no title yet, this might be it
+                        item['title'] = line
+
+            # Only add item if it has a title
+            if item['title']:
+                results.append(item)
+
+        # If parsing didn't produce any results, try alternative parsing
+        if not results:
+            # Try to extract from bullet points or numbered lists
+            lines = response.split('\n')
+            current_item = None
+
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+
+                # Check if line starts with bullet or number
+                if line.startswith(('- ', '* ', '• ', '1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.')):
+                    # Save previous item if exists
+                    if current_item and current_item.get('title'):
+                        results.append(current_item)
+
+                    # Start new item
+                    # Remove bullet/number prefix
+                    for prefix in ['- ', '* ', '• ']:
+                        if line.startswith(prefix):
+                            line = line[len(prefix):].strip()
+                            break
+
+                    # Remove number prefix (e.g., "1. ")
+                    import re
+                    line = re.sub(r'^\d+\.\s*', '', line)
+
+                    current_item = {
+                        'title': line,
+                        'competitor_name': competitor_name,
+                        'source': 'Perplexity Search',
+                        'content': '',
+                        'url': None,
+                        'published_at': None,
+                        'fetched_at': datetime.now().isoformat()
+                    }
+                elif current_item:
+                    # Add to content of current item
+                    if line.startswith('http'):
+                        current_item['url'] = line
+                    elif current_item['content']:
+                        current_item['content'] += ' ' + line
+                    else:
+                        current_item['content'] = line
+
+            # Add last item
+            if current_item and current_item.get('title'):
+                results.append(current_item)
+
+        # Final fallback: create single comprehensive item
         if not results:
             results.append({
                 'title': f'Competitive Intelligence Update: {competitor_name}',
