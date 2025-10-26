@@ -55,25 +55,35 @@ class NewsFetcher:
                 items = re.findall(r'<item>(.*?)</item>', content, re.DOTALL)
 
                 for item in items[:max_results]:
-                    # Extract title
-                    title_match = re.search(r'<title><!\[CDATA\[(.*?)\]\]></title>', item)
-                    title = title_match.group(1) if title_match else "No title"
+                    # Extract title - try multiple patterns
+                    title_match = re.search(r'<title><!\[CDATA\[(.*?)\]\]></title>', item, re.DOTALL)
+                    if not title_match:
+                        # Fallback: try without CDATA
+                        title_match = re.search(r'<title>(.*?)</title>', item, re.DOTALL)
+
+                    title = title_match.group(1).strip() if title_match else None
+
+                    # Skip item if no title found
+                    if not title:
+                        continue
 
                     # Extract link
                     link_match = re.search(r'<link>(.*?)</link>', item)
-                    link = link_match.group(1) if link_match else ""
+                    link = link_match.group(1).strip() if link_match else None
 
                     # Extract pub date
                     date_match = re.search(r'<pubDate>(.*?)</pubDate>', item)
-                    pub_date = date_match.group(1) if date_match else ""
+                    pub_date = date_match.group(1).strip() if date_match else None
 
-                    # Extract description/snippet
-                    desc_match = re.search(r'<description><!\[CDATA\[(.*?)\]\]></description>', item)
-                    description = desc_match.group(1) if desc_match else ""
+                    # Extract description/snippet - try multiple patterns
+                    desc_match = re.search(r'<description><!\[CDATA\[(.*?)\]\]></description>', item, re.DOTALL)
+                    if not desc_match:
+                        desc_match = re.search(r'<description>(.*?)</description>', item, re.DOTALL)
+                    description = desc_match.group(1).strip() if desc_match else ""
 
                     # Extract source
                     source_match = re.search(r'<source.*?>(.*?)</source>', item)
-                    source = source_match.group(1) if source_match else "Google News"
+                    source = source_match.group(1).strip() if source_match else "Google News"
 
                     results.append({
                         'title': title,
