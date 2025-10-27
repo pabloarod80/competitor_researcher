@@ -840,14 +840,15 @@ def settings_page():
         )
 
         perplexity_model = st.selectbox(
-            "Perplexity Model",
+            "Perplexity Model (2025)",
             options=[
-                "llama-3.1-sonar-small-128k-online",
-                "llama-3.1-sonar-large-128k-online",
-                "llama-3.1-sonar-huge-128k-online"
+                "sonar",
+                "sonar-pro",
+                "sonar-reasoning",
+                "sonar-reasoning-pro"
             ],
             index=1,
-            help="Large model recommended for comprehensive results"
+            help="sonar-pro recommended for comprehensive results (default)"
         )
 
         if st.button("💾 Save Perplexity Settings", key="save_pplx"):

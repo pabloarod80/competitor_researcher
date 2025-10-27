@@ -23,17 +23,18 @@ class PerplexityFetcher:
     - Industry publications
     """
 
-    def __init__(self, api_key: str, model: str = "llama-3.1-sonar-large-128k-online"):
+    def __init__(self, api_key: str, model: str = "sonar-pro"):
         """
         Initialize Perplexity fetcher.
 
         Args:
             api_key: Perplexity API key
-            model: Model to use for search
+            model: Model to use for search (2025 Sonar models)
                    Options:
-                   - llama-3.1-sonar-small-128k-online (fastest, most cost-effective)
-                   - llama-3.1-sonar-large-128k-online (more comprehensive, default)
-                   - llama-3.1-sonar-huge-128k-online (most detailed)
+                   - sonar (lightweight, fast, affordable)
+                   - sonar-pro (advanced, better for complex queries - DEFAULT)
+                   - sonar-reasoning (adds chain-of-thought reasoning)
+                   - sonar-reasoning-pro (most advanced reasoning)
         """
         self.api_key = api_key
         self.model = model

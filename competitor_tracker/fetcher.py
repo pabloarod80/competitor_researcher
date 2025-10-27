@@ -186,7 +186,7 @@ class NewsFetcher:
 
             perplexity = PerplexityFetcher(
                 api_key=self.config['perplexity_api_key'],
-                model=self.config.get('perplexity_model', 'llama-3.1-sonar-large-128k-online')
+                model=self.config.get('perplexity_model', 'sonar-pro')
             )
 
             results = perplexity.search_competitor_news(
@@ -231,7 +231,7 @@ class NewsFetcher:
 
             perplexity = PerplexityFetcher(
                 api_key=self.config['perplexity_api_key'],
-                model=self.config.get('perplexity_model', 'llama-3.1-sonar-large-128k-online')
+                model=self.config.get('perplexity_model', 'sonar-pro')
             )
 
             results = perplexity.search_product_updates(
@@ -272,7 +272,7 @@ class NewsFetcher:
 
             perplexity = PerplexityFetcher(
                 api_key=self.config['perplexity_api_key'],
-                model=self.config.get('perplexity_model', 'llama-3.1-sonar-large-128k-online')
+                model=self.config.get('perplexity_model', 'sonar-pro')
             )
 
             results = perplexity.search_company_changes(
