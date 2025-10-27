@@ -159,178 +159,132 @@ class NewsFetcher:
                              max_results: int = 10,
                              include_social: bool = False) -> List[Dict]:
         """
-        Fetch news about a specific competitor.
+        Fetch news about a specific competitor using Perplexity API.
 
         Args:
             competitor_name: Name of the competitor
             keywords: Additional keywords to search for
             days_back: Number of days to look back
             max_results: Maximum number of results to return
-            include_social: Include social media (requires Perplexity)
+            include_social: Include social media (Twitter, Reddit, etc.)
+
+        Returns:
+            List of news items
+
+        Raises:
+            ValueError: If Perplexity API key is not configured
         """
-        # Priority: Perplexity > NewsAPI > Google News RSS
-
-        # Check if we have Perplexity API key (best option - includes social media)
-        if self.config.get('perplexity_api_key'):
-            try:
-                from .perplexity_fetcher import PerplexityFetcher
-
-                perplexity = PerplexityFetcher(
-                    api_key=self.config['perplexity_api_key'],
-                    model=self.config.get('perplexity_model', 'llama-3.1-sonar-large-128k-online')
-                )
-
-                results = perplexity.search_competitor_news(
-                    competitor_name,
-                    keywords=keywords,
-                    days_back=days_back,
-                    include_social=include_social
-                )
-
-                if results:
-                    return results[:max_results]
-
-            except Exception as e:
-                print(f"Perplexity fetch error: {e}")
-                print("Falling back to NewsAPI or Google News...")
-
-        # Build search query for fallback sources
-        query_parts = [competitor_name]
-
-        if keywords:
-            query_parts.extend(keywords)
-
-        query = ' '.join(query_parts)
-
-        # Check if we have NewsAPI key in config
-        if self.config.get('newsapi_key'):
-            from_date = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
-            results = self.fetch_with_newsapi(
-                query,
-                self.config['newsapi_key'],
-                from_date=from_date,
-                max_results=max_results
+        # Check if Perplexity API key is configured
+        if not self.config.get('perplexity_api_key'):
+            raise ValueError(
+                "Perplexity API key is required. Please configure it in Settings.\n"
+                "Get your API key at: https://www.perplexity.ai/settings/api"
             )
-        else:
-            # Fall back to Google News RSS
-            results = self.fetch_google_news(query, max_results=max_results)
 
-        return results
+        try:
+            from .perplexity_fetcher import PerplexityFetcher
+
+            perplexity = PerplexityFetcher(
+                api_key=self.config['perplexity_api_key'],
+                model=self.config.get('perplexity_model', 'llama-3.1-sonar-large-128k-online')
+            )
+
+            results = perplexity.search_competitor_news(
+                competitor_name,
+                keywords=keywords,
+                days_back=days_back,
+                include_social=include_social
+            )
+
+            return results[:max_results] if results else []
+
+        except Exception as e:
+            print(f"Error fetching news from Perplexity: {e}")
+            raise
 
     def fetch_product_updates(self, competitor_name: str,
                             product_keywords: List[str] = None) -> List[Dict]:
         """
-        Fetch product-related updates for a competitor.
+        Fetch product-related updates for a competitor using Perplexity API.
 
-        Searches for terms like "launch", "release", "update", "feature", etc.
+        Searches for product launches, feature releases, updates, etc.
+
+        Args:
+            competitor_name: Name of the competitor
+            product_keywords: Additional product-specific keywords
+
+        Returns:
+            List of product update items
+
+        Raises:
+            ValueError: If Perplexity API key is not configured
         """
-        # Use Perplexity if available (better for product updates)
-        if self.config.get('perplexity_api_key'):
-            try:
-                from .perplexity_fetcher import PerplexityFetcher
-
-                perplexity = PerplexityFetcher(
-                    api_key=self.config['perplexity_api_key'],
-                    model=self.config.get('perplexity_model', 'llama-3.1-sonar-large-128k-online')
-                )
-
-                results = perplexity.search_product_updates(
-                    competitor_name,
-                    product_keywords=product_keywords
-                )
-
-                if results:
-                    return results
-
-            except Exception as e:
-                print(f"Perplexity product search error: {e}")
-                print("Falling back to traditional sources...")
-
-        # Fallback to traditional sources
-        product_terms = [
-            'product launch', 'new feature', 'release', 'update',
-            'announces', 'unveils', 'introduces'
-        ]
-
-        if product_keywords:
-            product_terms.extend(product_keywords)
-
-        # Search for product-related news
-        query = f"{competitor_name} {' OR '.join(product_terms[:3])}"
-
-        results = []
-
-        if self.config.get('newsapi_key'):
-            from_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-            results = self.fetch_with_newsapi(
-                query,
-                self.config['newsapi_key'],
-                from_date=from_date,
-                max_results=5
+        # Check if Perplexity API key is configured
+        if not self.config.get('perplexity_api_key'):
+            raise ValueError(
+                "Perplexity API key is required. Please configure it in Settings.\n"
+                "Get your API key at: https://www.perplexity.ai/settings/api"
             )
-        else:
-            results = self.fetch_google_news(query, max_results=5)
 
-        # Tag as product-related
-        for result in results:
-            result['category'] = 'product_update'
+        try:
+            from .perplexity_fetcher import PerplexityFetcher
 
-        return results
+            perplexity = PerplexityFetcher(
+                api_key=self.config['perplexity_api_key'],
+                model=self.config.get('perplexity_model', 'llama-3.1-sonar-large-128k-online')
+            )
+
+            results = perplexity.search_product_updates(
+                competitor_name,
+                product_keywords=product_keywords
+            )
+
+            return results if results else []
+
+        except Exception as e:
+            print(f"Error fetching product updates from Perplexity: {e}")
+            raise
 
     def fetch_company_updates(self, competitor_name: str) -> List[Dict]:
         """
-        Fetch company-related updates (funding, acquisitions, leadership, etc.).
+        Fetch company-related updates using Perplexity API.
 
-        Searches for corporate news and announcements.
+        Searches for funding, acquisitions, leadership changes, and corporate news.
+
+        Args:
+            competitor_name: Name of the competitor
+
+        Returns:
+            List of company update items
+
+        Raises:
+            ValueError: If Perplexity API key is not configured
         """
-        # Use Perplexity if available (better for company updates)
-        if self.config.get('perplexity_api_key'):
-            try:
-                from .perplexity_fetcher import PerplexityFetcher
-
-                perplexity = PerplexityFetcher(
-                    api_key=self.config['perplexity_api_key'],
-                    model=self.config.get('perplexity_model', 'llama-3.1-sonar-large-128k-online')
-                )
-
-                results = perplexity.search_company_changes(
-                    competitor_name,
-                    days_back=30
-                )
-
-                if results:
-                    return results
-
-            except Exception as e:
-                print(f"Perplexity company search error: {e}")
-                print("Falling back to traditional sources...")
-
-        # Fallback to traditional sources
-        company_terms = [
-            'funding', 'acquisition', 'merger', 'partnership',
-            'CEO', 'executive', 'hiring', 'expansion', 'revenue'
-        ]
-
-        query = f"{competitor_name} {' OR '.join(company_terms[:3])}"
-
-        results = []
-
-        if self.config.get('newsapi_key'):
-            from_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-            results = self.fetch_with_newsapi(
-                query,
-                self.config['newsapi_key'],
-                from_date=from_date,
-                max_results=5
+        # Check if Perplexity API key is configured
+        if not self.config.get('perplexity_api_key'):
+            raise ValueError(
+                "Perplexity API key is required. Please configure it in Settings.\n"
+                "Get your API key at: https://www.perplexity.ai/settings/api"
             )
-        else:
-            results = self.fetch_google_news(query, max_results=5)
 
-        # Tag as company update
-        for result in results:
-            result['category'] = 'company_update'
+        try:
+            from .perplexity_fetcher import PerplexityFetcher
 
-        return results
+            perplexity = PerplexityFetcher(
+                api_key=self.config['perplexity_api_key'],
+                model=self.config.get('perplexity_model', 'llama-3.1-sonar-large-128k-online')
+            )
+
+            results = perplexity.search_company_changes(
+                competitor_name,
+                days_back=30
+            )
+
+            return results if results else []
+
+        except Exception as e:
+            print(f"Error fetching company updates from Perplexity: {e}")
+            raise
 
     def categorize_news(self, title: str, content: str) -> str:
         """

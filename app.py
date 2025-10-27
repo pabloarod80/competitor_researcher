@@ -297,13 +297,36 @@ def fetch_updates_page():
     """Page for fetching competitor updates."""
     st.markdown('<p class="main-header">🔄 Fetch Updates</p>', unsafe_allow_html=True)
 
+    # Check if Perplexity API key is configured
+    if not st.session_state.config.get('perplexity_api_key'):
+        st.error("⚠️ **Perplexity API Key Required**")
+        st.markdown("""
+        This application uses **Perplexity AI** exclusively for news gathering to ensure:
+        - High-quality, comprehensive results
+        - Consistent data format
+        - Social media integration (Twitter, Reddit, LinkedIn)
+        - Real-time search capabilities
+
+        **To get started:**
+        1. Go to [perplexity.ai/settings/api](https://www.perplexity.ai/settings/api)
+        2. Create an API key
+        3. Add it in the **Settings** page
+        """)
+
+        if st.button("⚙️ Go to Settings"):
+            st.session_state['nav_to_settings'] = True
+            st.rerun()
+
+        return
+
     competitors = st.session_state.db.get_competitors()
 
     if not competitors:
         st.warning("⚠️ No competitors added yet. Add competitors first!")
         return
 
-    st.write("Fetch the latest news and updates for your competitors.")
+    st.success("✅ Perplexity API configured - Ready to fetch news!")
+    st.write("Fetch the latest news and updates for your competitors using Perplexity AI.")
 
     col1, col2 = st.columns(2)
 
@@ -318,16 +341,12 @@ def fetch_updates_page():
 
     max_results = st.slider("Max results per competitor", min_value=5, max_value=50, value=10)
 
-    # Social media option (only available with Perplexity)
-    include_social = False
-    if st.session_state.config.get('perplexity_api_key'):
-        include_social = st.checkbox(
-            "🐦 Include Social Media (Twitter, Reddit, etc.)",
-            value=False,
-            help="Powered by Perplexity - searches social media for mentions and discussions"
-        )
-    else:
-        st.info("💡 Add Perplexity API key in Settings to enable social media search")
+    # Social media option
+    include_social = st.checkbox(
+        "🐦 Include Social Media (Twitter, Reddit, LinkedIn, etc.)",
+        value=False,
+        help="Search social media for mentions and discussions about competitors"
+    )
 
     if st.button("🔄 Fetch Updates", type="primary"):
         progress_bar = st.progress(0)
@@ -789,14 +808,37 @@ def settings_page():
 
                 st.success("✅ AI settings saved!")
 
-    # Perplexity API Settings (RECOMMENDED)
-    with st.expander("🔍 Perplexity API Settings (Recommended)", expanded=False):
-        st.markdown("**Best option for comprehensive news and social media search!**")
-        st.write("Get your API key at [perplexity.ai/settings/api](https://www.perplexity.ai/settings/api)")
+    # Perplexity API Settings (REQUIRED)
+    with st.expander("🔍 Perplexity API Settings (REQUIRED for News Fetching)", expanded=True):
+        st.error("**⚠️ REQUIRED:** This application uses Perplexity AI exclusively for all news gathering.")
 
-        st.info("Perplexity searches across news, Twitter, Reddit, blogs, and more with AI-powered understanding.")
+        st.markdown("""
+        **Why Perplexity?**
+        - High-quality, comprehensive news results
+        - Real-time search across news, Twitter, Reddit, LinkedIn, blogs
+        - Consistent, structured data format
+        - AI-powered understanding of context
 
-        perplexity_key = st.text_input("Perplexity API Key", type="password", key="pplx_key")
+        **Get your API key:**
+        1. Visit [perplexity.ai/settings/api](https://www.perplexity.ai/settings/api)
+        2. Sign up or log in
+        3. Create a new API key
+        4. Copy and paste it below
+        """)
+
+        # Show current status
+        if st.session_state.config.get('perplexity_api_key'):
+            st.success("✅ Perplexity API key is configured!")
+        else:
+            st.warning("⚠️ Perplexity API key not configured. News fetching will not work.")
+
+        perplexity_key = st.text_input(
+            "Perplexity API Key",
+            type="password",
+            key="pplx_key",
+            value=st.session_state.config.get('perplexity_api_key', '')
+        )
+
         perplexity_model = st.selectbox(
             "Perplexity Model",
             options=[
@@ -809,20 +851,14 @@ def settings_page():
         )
 
         if st.button("💾 Save Perplexity Settings", key="save_pplx"):
-            st.session_state.config['perplexity_api_key'] = perplexity_key
-            st.session_state.config['perplexity_model'] = perplexity_model
-            st.session_state.fetcher = NewsFetcher(st.session_state.config)
-            st.success("✅ Perplexity settings saved! You now have access to news + social media search.")
-
-    # News API Settings
-    with st.expander("📰 NewsAPI Settings (Alternative)"):
-        st.write("Get a free API key from [newsapi.org](https://newsapi.org)")
-        newsapi_key = st.text_input("NewsAPI Key", type="password", key="newsapi_key")
-
-        if st.button("💾 Save NewsAPI Key"):
-            st.session_state.config['newsapi_key'] = newsapi_key
-            st.session_state.fetcher = NewsFetcher(st.session_state.config)
-            st.success("✅ NewsAPI key saved!")
+            if perplexity_key:
+                st.session_state.config['perplexity_api_key'] = perplexity_key
+                st.session_state.config['perplexity_model'] = perplexity_model
+                st.session_state.fetcher = NewsFetcher(st.session_state.config)
+                st.success("✅ Perplexity settings saved! News fetching is now enabled.")
+                st.balloons()
+            else:
+                st.error("Please enter a Perplexity API key.")
 
     # Export Data
     st.markdown("---")
