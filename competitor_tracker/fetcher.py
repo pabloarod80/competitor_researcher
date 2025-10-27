@@ -294,16 +294,32 @@ class NewsFetcher:
         """
         text = f"{title} {content}".lower()
 
-        if any(word in text for word in ['product', 'feature', 'launch', 'release', 'update']):
+        # Product-related (more comprehensive keywords)
+        product_keywords = [
+            'product', 'feature', 'launch', 'release', 'update', 'upgrade',
+            'version', 'beta', 'announces', 'unveils', 'introduces',
+            'browser', 'app', 'software', 'tool', 'platform', 'service',
+            'new model', 'chatgpt', 'gpt-', 'claude', 'api', 'sdk'
+        ]
+        if any(word in text for word in product_keywords):
             return 'product'
-        elif any(word in text for word in ['funding', 'investment', 'raise', 'series']):
+
+        # Funding/Investment
+        elif any(word in text for word in ['funding', 'investment', 'raise', 'series', 'valuation', 'ipo']):
             return 'funding'
-        elif any(word in text for word in ['acquisition', 'acquire', 'merger', 'buy']):
+
+        # Acquisition/Merger
+        elif any(word in text for word in ['acquisition', 'acquire', 'merger', 'buy', 'buyout', 'takeover']):
             return 'acquisition'
-        elif any(word in text for word in ['partnership', 'partner', 'collaborate', 'alliance']):
+
+        # Partnership
+        elif any(word in text for word in ['partnership', 'partner', 'collaborate', 'alliance', 'deal']):
             return 'partnership'
-        elif any(word in text for word in ['ceo', 'executive', 'leadership', 'appoints']):
+
+        # Leadership changes
+        elif any(word in text for word in ['ceo', 'executive', 'leadership', 'appoints', 'hires', 'names', 'joins']):
             return 'leadership'
+
         else:
             return 'general'
 
@@ -334,6 +350,75 @@ class NewsFetcher:
             return 'negative'
         else:
             return 'neutral'
+
+    def is_duplicate(self, title1: str, title2: str, threshold: float = 0.7) -> bool:
+        """
+        Check if two news titles are likely duplicates using word overlap.
+
+        Args:
+            title1: First title
+            title2: Second title
+            threshold: Similarity threshold (0-1), default 0.7
+
+        Returns:
+            True if titles are likely duplicates
+        """
+        if not title1 or not title2:
+            return False
+
+        # Convert to lowercase and split into words
+        words1 = set(title1.lower().split())
+        words2 = set(title2.lower().split())
+
+        # Remove common words that don't add meaning
+        stopwords = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'as'}
+        words1 = words1 - stopwords
+        words2 = words2 - stopwords
+
+        if not words1 or not words2:
+            return False
+
+        # Calculate Jaccard similarity (intersection over union)
+        intersection = len(words1 & words2)
+        union = len(words1 | words2)
+
+        similarity = intersection / union if union > 0 else 0
+
+        return similarity >= threshold
+
+    def deduplicate_news(self, news_items: List[Dict]) -> List[Dict]:
+        """
+        Remove duplicate news items from a list.
+
+        Args:
+            news_items: List of news items with 'title' field
+
+        Returns:
+            Deduplicated list of news items
+        """
+        if not news_items:
+            return []
+
+        unique_items = []
+        seen_titles = []
+
+        for item in news_items:
+            title = item.get('title', '')
+            if not title:
+                continue
+
+            # Check if this title is similar to any we've already seen
+            is_dup = False
+            for seen_title in seen_titles:
+                if self.is_duplicate(title, seen_title):
+                    is_dup = True
+                    break
+
+            if not is_dup:
+                unique_items.append(item)
+                seen_titles.append(title)
+
+        return unique_items
 
 
 class DataEnricher:

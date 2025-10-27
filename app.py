@@ -143,7 +143,16 @@ def home_page():
         if news:
             for item in news[:10]:
                 with st.container():
-                    st.markdown(f"**[{item.get('competitor_name', 'Unknown')}]** {item['title']}")
+                    # Make title clickable if URL available
+                    title = item.get('title', 'No title')
+                    url = item.get('url')
+                    competitor = item.get('competitor_name', 'Unknown')
+
+                    if url:
+                        st.markdown(f"**[{competitor}]** [{title}]({url})")
+                    else:
+                        st.markdown(f"**[{competitor}]** {title}")
+
                     col_a, col_b, col_c = st.columns([2, 2, 1])
                     with col_a:
                         st.caption(f"📅 {item.get('fetched_at', 'Unknown date')[:10]}")
@@ -163,7 +172,15 @@ def home_page():
         products = recent_updates.get('product_changes', [])
         if products:
             for item in products:
-                st.markdown(f"**[{item.get('competitor_name', 'Unknown')}]** {item.get('product_name', 'Unknown Product')}")
+                competitor = item.get('competitor_name', 'Unknown')
+                product = item.get('product_name', 'Unknown Product')
+                url = item.get('source_url')
+
+                if url:
+                    st.markdown(f"**[{competitor}]** [{product}]({url})")
+                else:
+                    st.markdown(f"**[{competitor}]** {product}")
+
                 st.caption(f"Change: {item.get('change_type', 'update')}")
                 if item.get('description'):
                     st.write(item['description'])
@@ -175,7 +192,15 @@ def home_page():
         company = recent_updates.get('company_updates', [])
         if company:
             for item in company:
-                st.markdown(f"**[{item.get('competitor_name', 'Unknown')}]** {item['title']}")
+                competitor = item.get('competitor_name', 'Unknown')
+                title = item.get('title', 'No title')
+                url = item.get('source_url')
+
+                if url:
+                    st.markdown(f"**[{competitor}]** [{title}]({url})")
+                else:
+                    st.markdown(f"**[{competitor}]** {title}")
+
                 st.caption(f"Type: {item.get('update_type', 'general')}")
                 if item.get('description'):
                     st.write(item['description'])
@@ -375,6 +400,9 @@ def fetch_updates_page():
                     include_social=include_social
                 )
 
+                # Deduplicate news items
+                news_items = st.session_state.fetcher.deduplicate_news(news_items)
+
                 # Process and store
                 for item in news_items:
                     category = st.session_state.fetcher.categorize_news(
@@ -393,17 +421,42 @@ def fetch_updates_page():
                             item.get('content', '')
                         )
 
-                    st.session_state.db.add_news(
-                        competitor_id=comp['id'],
-                        title=item.get('title', ''),
-                        url=item.get('url'),
-                        source=item.get('source'),
-                        content=item.get('content'),
-                        category=category,
-                        sentiment=sentiment,
-                        ai_summary=ai_summary,
-                        published_at=item.get('published_at')
-                    )
+                    # Route to appropriate table based on category
+                    if category == 'product':
+                        # Store in product_changes table
+                        st.session_state.db.add_product_change(
+                            competitor_id=comp['id'],
+                            product_name=comp['name'],  # Use competitor name as product name
+                            change_type='update',
+                            description=f"{item.get('title', '')}. {item.get('content', '')}",
+                            impact_analysis=ai_summary,
+                            source_url=item.get('url')
+                        )
+                    elif category in ['funding', 'acquisition', 'partnership', 'leadership']:
+                        # Store in company_updates table
+                        st.session_state.db.add_company_update(
+                            competitor_id=comp['id'],
+                            update_type=category,
+                            title=item.get('title', ''),
+                            description=item.get('content'),
+                            impact_level='medium',  # Could be enhanced with AI analysis
+                            source_url=item.get('url'),
+                            ai_analysis=ai_summary,
+                            published_at=item.get('published_at')
+                        )
+                    else:
+                        # Store in news table for general news
+                        st.session_state.db.add_news(
+                            competitor_id=comp['id'],
+                            title=item.get('title', ''),
+                            url=item.get('url'),
+                            source=item.get('source'),
+                            content=item.get('content'),
+                            category=category,
+                            sentiment=sentiment,
+                            ai_summary=ai_summary,
+                            published_at=item.get('published_at')
+                        )
 
                     total_fetched += 1
 
