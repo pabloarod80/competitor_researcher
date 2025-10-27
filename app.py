@@ -213,50 +213,75 @@ def add_competitor_page():
     """Page for adding new competitors."""
     st.markdown('<p class="main-header">➕ Add New Competitor</p>', unsafe_allow_html=True)
 
+    st.info("💡 **Tip:** Just provide the company name and website URL. We'll automatically extract company information to find relevant news!")
+
     with st.form("add_competitor_form"):
         st.subheader("Competitor Information")
 
         col1, col2 = st.columns(2)
 
         with col1:
-            name = st.text_input("Company Name *", placeholder="e.g., Acme Corp")
-            website = st.text_input("Website", placeholder="https://example.com")
-            industry = st.text_input("Industry", placeholder="e.g., Software, E-commerce")
+            name = st.text_input("Company Name *", placeholder="e.g., OpenAI")
+            website = st.text_input("Website URL *", placeholder="https://openai.com")
 
         with col2:
-            headquarters = st.text_input("Headquarters", placeholder="e.g., San Francisco, CA")
-            employee_count = st.text_input("Employee Count", placeholder="e.g., 100-500")
-            founded_date = st.text_input("Founded Date", placeholder="e.g., 2020")
+            headquarters = st.text_input("Headquarters (Optional)", placeholder="e.g., San Francisco, CA")
+            founded_date = st.text_input("Founded Date (Optional)", placeholder="e.g., 2015")
 
-        description = st.text_area("Description", placeholder="Brief description of the company...")
-
-        keywords = st.text_input(
-            "Tracking Keywords (comma-separated)",
-            placeholder="e.g., AI, SaaS, product launch, funding",
-            help="Keywords to help filter relevant news about this competitor"
+        auto_extract = st.checkbox(
+            "🤖 Auto-extract company information from website",
+            value=True,
+            help="Automatically visit the website and extract company description, industry, and products"
         )
+
+        st.markdown("---")
+        st.caption("Optional: Manually provide additional details (will be auto-filled if using auto-extract)")
+
+        description = st.text_area("Description", placeholder="Will be auto-extracted from website...")
+        industry = st.text_input("Industry", placeholder="Will be auto-detected...")
+        employee_count = st.text_input("Employee Count", placeholder="e.g., 100-500")
 
         submitted = st.form_submit_button("Add Competitor", type="primary")
 
         if submitted:
             if not name:
                 st.error("⚠️ Company name is required!")
+            elif not website:
+                st.error("⚠️ Website URL is required for automatic information extraction!")
             else:
                 try:
-                    keyword_list = [k.strip() for k in keywords.split(',')] if keywords else None
+                    extracted_description = description
+                    extracted_industry = industry
+
+                    # Auto-extract company info from website
+                    if auto_extract and website:
+                        with st.spinner(f"🔍 Analyzing {website}..."):
+                            from competitor_tracker.company_analyzer import CompanyAnalyzer
+                            analyzer = CompanyAnalyzer()
+                            company_info = analyzer.extract_company_info(name, website)
+
+                            # Use extracted info if not manually provided
+                            if not description and company_info.get('description'):
+                                extracted_description = company_info['description']
+                                st.success(f"✅ Auto-extracted description")
+
+                            if not industry and company_info.get('industry'):
+                                extracted_industry = company_info['industry']
+                                st.success(f"✅ Auto-detected industry: {extracted_industry}")
 
                     comp_id = st.session_state.db.add_competitor(
                         name=name,
                         website=website or None,
-                        description=description or None,
-                        industry=industry or None,
-                        tracking_keywords=keyword_list,
+                        description=extracted_description or None,
+                        industry=extracted_industry or None,
+                        tracking_keywords=None,  # No longer used
                         headquarters=headquarters or None,
                         employee_count=employee_count or None,
                         founded_date=founded_date or None
                     )
 
                     st.success(f"✅ Successfully added '{name}' (ID: {comp_id})")
+                    st.info(f"💡 When fetching news, we'll use the extracted information to find relevant updates about {name}")
                     st.balloons()
 
                 except Exception as e:
@@ -389,15 +414,22 @@ def fetch_updates_page():
             progress_bar.progress((i + 1) / len(comp_list))
 
             try:
-                keywords = comp.get('tracking_keywords', [])
+                # Use auto-extracted company context instead of manual keywords
+                company_context = None
+                if comp.get('description'):
+                    context_parts = [comp['description']]
+                    if comp.get('industry'):
+                        context_parts.append(f"Industry: {comp['industry']}")
+                    company_context = '. '.join(context_parts)
 
-                # Fetch news
+                # Fetch news with rich company context
                 news_items = st.session_state.fetcher.fetch_competitor_news(
                     comp['name'],
-                    keywords=keywords,
+                    keywords=None,  # No longer using manual keywords
                     days_back=days_back,
                     max_results=max_results,
-                    include_social=include_social
+                    include_social=include_social,
+                    company_context=company_context
                 )
 
                 # Deduplicate news items

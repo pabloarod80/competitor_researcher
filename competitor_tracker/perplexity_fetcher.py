@@ -44,15 +44,17 @@ class PerplexityFetcher:
                                competitor_name: str,
                                keywords: List[str] = None,
                                days_back: int = 7,
-                               include_social: bool = True) -> List[Dict]:
+                               include_social: bool = True,
+                               company_context: str = None) -> List[Dict]:
         """
         Search for news and updates about a competitor.
 
         Args:
             competitor_name: Name of the competitor
-            keywords: Additional keywords to search for
+            keywords: Additional keywords to search for (deprecated - use company_context)
             days_back: Number of days to look back
             include_social: Include social media mentions
+            company_context: Rich context about the company (description, industry, products)
 
         Returns:
             List of structured news items with source attribution
@@ -62,7 +64,8 @@ class PerplexityFetcher:
             competitor_name,
             keywords,
             days_back,
-            include_social
+            include_social,
+            company_context
         )
 
         # Call Perplexity API
@@ -244,20 +247,25 @@ Be comprehensive and factual."""
                            competitor_name: str,
                            keywords: List[str],
                            days_back: int,
-                           include_social: bool) -> str:
+                           include_social: bool,
+                           company_context: str = None) -> str:
         """Build search query for Perplexity."""
 
         sources = "news articles, press releases, and industry publications"
         if include_social:
             sources += ", social media (Twitter, Reddit, LinkedIn, Hacker News), and blog posts"
 
-        keyword_text = ""
-        if keywords:
-            keyword_text = f"\nFocus on these topics: {', '.join(keywords)}"
+        # Use rich company context if available, otherwise fall back to keywords
+        context_text = ""
+        if company_context:
+            context_text = f"\n\nCompany context: {company_context}"
+            context_text += "\nUse this context to find relevant news about this company's products, services, and industry."
+        elif keywords:
+            context_text = f"\nFocus on these topics: {', '.join(keywords)}"
 
         query = f"""Find recent updates and news about {competitor_name} from the last {days_back} days.
 
-Search {sources}.{keyword_text}
+Search {sources}.{context_text}
 
 For each news item you find, provide the response in this EXACT format:
 

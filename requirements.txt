@@ -6,14 +6,16 @@ PyYAML>=6.0
 streamlit>=1.28.0
 pandas>=2.0.0
 
+# Web scraping (for auto company info extraction)
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
 # Optional: AI providers (uncomment the ones you need)
 # openai>=1.0.0        # For OpenAI GPT models
 # anthropic>=0.18.0    # For Anthropic Claude models
 
 # Optional: Enhanced features
 # feedparser>=6.0.10   # For better RSS feed parsing
-# beautifulsoup4>=4.12.0  # For web scraping
-# lxml>=4.9.0          # XML/HTML parser
 
 # Optional: Advanced text analysis
 # nltk>=3.8            # Natural language processing

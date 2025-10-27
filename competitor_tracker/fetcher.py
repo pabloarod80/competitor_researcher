@@ -157,16 +157,18 @@ class NewsFetcher:
                              keywords: List[str] = None,
                              days_back: int = 7,
                              max_results: int = 10,
-                             include_social: bool = False) -> List[Dict]:
+                             include_social: bool = False,
+                             company_context: str = None) -> List[Dict]:
         """
         Fetch news about a specific competitor using Perplexity API.
 
         Args:
             competitor_name: Name of the competitor
-            keywords: Additional keywords to search for
+            keywords: Additional keywords (deprecated - use company_context)
             days_back: Number of days to look back
             max_results: Maximum number of results to return
             include_social: Include social media (Twitter, Reddit, etc.)
+            company_context: Auto-extracted company context (description, industry, products)
 
         Returns:
             List of news items
@@ -193,7 +195,8 @@ class NewsFetcher:
                 competitor_name,
                 keywords=keywords,
                 days_back=days_back,
-                include_social=include_social
+                include_social=include_social,
+                company_context=company_context
             )
 
             return results[:max_results] if results else []
